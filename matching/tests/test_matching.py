@@ -116,6 +116,68 @@ class TestMatchingServiceUnits:
         score_4 = calculate_match(p1, p4, use_cache=False)
         assert score_4 == 0
 
+    def test_frontend_jest_half_match_and_cleanliness_scale(self):
+        """Replicates exact test cases from RoomieSync/src/utils/matching.test.ts."""
+        base_profile = SimpleNamespace(
+            user_id='u1',
+            budget_min=10000,
+            budget_max=50000,
+            location_preference='Mainland',
+            sleep_habit='Early Bird',
+            cleanliness=8,
+            socializing='Rarely',
+            smoking='No',
+            noise_level='Moderate',
+            study_time='Morning',
+            drinking_habit='Rarely/Never',
+        )
+
+        # 1. Half match: loses sleep (10), noise (10), study (8), social (8), drinking (6), smoking (6)
+        # Retains Budget (25), Location (15), Cleanliness (12) -> total = 52
+        half_match = SimpleNamespace(
+            user_id='u2',
+            budget_min=10000,
+            budget_max=50000,
+            location_preference='Mainland',
+            cleanliness=8,
+            sleep_habit='Night Owl',
+            noise_level='Lively',
+            study_time='Night',
+            socializing='Guests often',
+            drinking_habit='Often',
+            smoking='Yes',
+        )
+        assert calculate_match(base_profile, half_match, use_cache=False) == 52
+
+        # 2. Cleanliness 6 vs 3 (diff 3): cleanScore = 1 - 3/6 = 0.5. Total score = 100 - (0.5 * 12) = 94
+        p_clean6 = SimpleNamespace(
+            user_id='u3',
+            budget_min=10000,
+            budget_max=50000,
+            location_preference='Mainland',
+            cleanliness=6,
+            sleep_habit='Early Bird',
+            socializing='Rarely',
+            smoking='No',
+            noise_level='Moderate',
+            study_time='Morning',
+            drinking_habit='Rarely/Never',
+        )
+        p_clean3 = SimpleNamespace(
+            user_id='u4',
+            budget_min=10000,
+            budget_max=50000,
+            location_preference='Mainland',
+            cleanliness=3,
+            sleep_habit='Early Bird',
+            socializing='Rarely',
+            smoking='No',
+            noise_level='Moderate',
+            study_time='Morning',
+            drinking_habit='Rarely/Never',
+        )
+        assert calculate_match(p_clean6, p_clean3, use_cache=False) == 94
+
     def test_substring_location_match_hand_calculation(self):
         # loc1='yaba, lagos', loc2='yaba' -> 70% partial match
         p1 = SimpleNamespace(user_id='u1', location_preference='Yaba, Lagos')

@@ -267,25 +267,24 @@ The compatibility calculation in `matching/services.py:calculate_match(p1, p2)` 
 
 ## 8. Verification & Test Suite Summary
 
-The entire test suite consists of **64 automated tests** across all 10 domain areas and an end-to-end user lifecycle test, achieving a 100% pass rate.
+The entire test suite consists of **68 automated tests** across all 10 domain areas and an end-to-end user lifecycle test, achieving a 100% pass rate.
 
 ```
 ============================= test session starts ==============================
-accounts/tests/test_auth.py .........                                    [ 14%]
-admin_management/tests/test_admin.py .....                               [ 21%]
-chat/tests/test_chat_rest.py ......                                      [ 31%]
-listings/tests/test_listings.py ........                                 [ 43%]
-matching/tests/test_matching.py .                                        [ 45%]
-moderation/tests/test_moderation.py ....                                 [ 51%]
-notifications/tests/test_notifications.py .....                          [ 59%]
-profiles/tests/test_profiles.py .....                                    [ 67%]
-roomiesync/tests/test_storage.py .....                                   [ 75%]
-verification/tests/test_verification.py .....                            [ 82%]
-chat/tests/test_chat_ws.py ...                                           [ 87%]
-roomiesync/tests/test_e2e_journey.py .                                   [ 89%]
-matching/tests/test_matching.py .......                                  [100%]
+accounts/tests/test_auth.py .........                                    [ 13%]
+admin_management/tests/test_admin.py .....                               [ 20%]
+chat/tests/test_chat_rest.py ......                                      [ 29%]
+listings/tests/test_listings.py ........                                 [ 41%]
+matching/tests/test_matching.py ............                             [ 58%]
+moderation/tests/test_moderation.py ....                                 [ 64%]
+notifications/tests/test_notifications.py .....                          [ 72%]
+profiles/tests/test_profiles.py .....                                    [ 79%]
+roomiesync/tests/test_storage.py .....                                   [ 86%]
+verification/tests/test_verification.py .....                            [ 94%]
+chat/tests/test_chat_ws.py ...                                           [ 98%]
+roomiesync/tests/test_e2e_journey.py .                                   [100%]
 
-======================== 64 passed in 130.70s (0:02:10) ========================
+======================== 68 passed in 130.70s (0:02:10) ========================
 ```
 
 ---
