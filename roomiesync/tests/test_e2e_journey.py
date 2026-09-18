@@ -316,7 +316,7 @@ class TestFullRoomieSyncUserJourney:
         client_a.credentials(HTTP_AUTHORIZATION=f"Bearer {token_a}")
         res_read = client_a.post(f"/api/v1/chat/conversations/{conversation_id}/read/")
         assert res_read.status_code == 200
-        assert res_read.data['marked_read_count'] >= 1
+        assert res_read.data['marked_read'] >= 1
 
         # -------------------------------------------------------------
         # 9. Moderation: Report and Block
@@ -339,7 +339,7 @@ class TestFullRoomieSyncUserJourney:
         # Verify Student B is excluded from Student A's conversations list
         res_inbox_a = client_a.get('/api/v1/chat/conversations/')
         assert res_inbox_a.status_code == 200
-        assert not any(c['id'] == conversation_id for c in res_inbox_a.data['results'])
+        assert not any(c['id'] == conversation_id for c in res_inbox_a.data)
 
         # -------------------------------------------------------------
         # 10. Account Deletion (Self-serve GDPR/Security)
