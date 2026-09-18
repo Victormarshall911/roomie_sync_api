@@ -73,7 +73,7 @@ class TestNotifications:
         }
         mock_post.return_value = mock_response
 
-        # Long message content exceeding 50 chars to test exact truncation
+        # Message creation triggers post_save signal which runs eager Celery task
         long_content = "Hello! I saw your room listing and I would really love to schedule a visit tomorrow."
         msg = Message.objects.create(
             conversation=chat_convo,
@@ -81,8 +81,11 @@ class TestNotifications:
             content=long_content
         )
 
-        payloads = send_new_message_notification(msg.id)
-        assert payloads is not None
+        # Verify requests.post was called with EXPO_PUSH_URL and correct JSON
+        assert mock_post.call_count == 1
+        args, kwargs = mock_post.call_args
+        assert args[0] == "https://exp.host/--/api/v2/push/send"
+        payloads = kwargs['json']
         assert len(payloads) == 2  # Sent to both devices
 
         # Verify exact payload shape matching send-notification and useNotifications.ts
@@ -100,12 +103,6 @@ class TestNotifications:
 
         payload_2 = payloads[1]
         assert payload_2['to'] == dt_android.token
-
-        # Verify requests.post was called with EXPO_PUSH_URL and correct JSON
-        mock_post.assert_called_once()
-        args, kwargs = mock_post.call_args
-        assert args[0] == "https://exp.host/--/api/v2/push/send"
-        assert kwargs['json'] == payloads
 
     def test_recipient_with_zero_tokens_does_not_error(self, chat_convo, sender_user, recipient_user):
         # Ensure recipient has 0 device tokens
@@ -147,8 +144,6 @@ class TestNotifications:
             sender=sender_user,
             content='Testing token pruning'
         )
-
-        send_new_message_notification(msg.id)
 
         # Verify active token remains, while stale token was automatically deleted from DB
         assert DeviceToken.objects.filter(token=dt_active.token).exists()
