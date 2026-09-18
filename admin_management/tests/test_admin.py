@@ -145,16 +145,24 @@ class TestAdminManagement:
         # Expiry MUST be in 30-60 minute range (1800s to 3600s)
         assert 1800 <= expires_in <= 3600, f"Expected expiry between 1800s and 3600s, got {expires_in}s"
 
-        # 2. Test signed URL access
+        # 2. Test signed URL access as unauthenticated user
         signed_url = response.data['document_url']
-        api_client.credentials()  # Unauthenticate to test signed token access
+        api_client.force_authenticate(user=None)
         res_signed = api_client.get(signed_url)
         assert res_signed.status_code == status.HTTP_200_OK
 
-        # 3. Test expired token is rejected
+        # 3. Test expired token is rejected (2000 seconds in the future, past 1800s expiry)
         signer = TimestampSigner()
-        # Sign with a timestamp 2000 seconds in the past
-        old_time = signer.timestamp(signer.sign(str(req.id)))
-        expired_url = f"{doc_url}?token={req.id}:oldtime:invalidsig"
-        res_expired = api_client.get(expired_url)
-        assert res_expired.status_code == status.HTTP_403_FORBIDDEN
+        with patch('time.time', return_value=1000000.0):
+            token_for_expiry = signer.sign(str(req.id))
+
+        with patch('time.time', return_value=1000000.0 + 2000.0):
+            expired_url = f"{doc_url}?token={token_for_expiry}"
+            res_expired = api_client.get(expired_url)
+            assert res_expired.status_code == status.HTTP_403_FORBIDDEN
+            assert 'expired' in str(res_expired.data).lower()
+
+        # 4. Test tampered / invalid signature is rejected
+        tampered_url = f"{doc_url}?token={str(req.id)}:fake:tampered"
+        res_tampered = api_client.get(tampered_url)
+        assert res_tampered.status_code == status.HTTP_403_FORBIDDEN
