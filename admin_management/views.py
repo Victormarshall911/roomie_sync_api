@@ -26,12 +26,17 @@ def generate_signed_document_url(verification_req, request=None, expires_in=DOCU
 
     if settings.AWS_ACCESS_KEY_ID and settings.AWS_STORAGE_BUCKET_NAME:
         import boto3
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_S3_REGION_NAME
-        )
+        client_kwargs = {
+            'service_name': 's3',
+            'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+            'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+            'region_name': getattr(settings, 'AWS_S3_REGION_NAME', 'auto'),
+        }
+        endpoint_url = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
+        if endpoint_url:
+            client_kwargs['endpoint_url'] = endpoint_url
+
+        s3_client = boto3.client(**client_kwargs)
         url = s3_client.generate_presigned_url(
             'get_object',
             Params={
