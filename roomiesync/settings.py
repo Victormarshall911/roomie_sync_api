@@ -169,12 +169,22 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
 
-logger = logging.getLogger('roomiesync.storage')
-
 if not (AWS_ACCESS_KEY_ID and AWS_STORAGE_BUCKET_NAME):
     sys.stderr.write("\n" + "=" * 78 + "\n")
     sys.stderr.write("[STORAGE WARNING] AWS S3 credentials not provided. Using local FileSystemStorage fallback!\n")
     sys.stderr.write("=" * 78 + "\n\n")
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    storage_backend = 'django.core.files.storage.FileSystemStorage'
 else:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    storage_backend = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+
+DEFAULT_FILE_STORAGE = storage_backend
+STORAGES = {
+    "default": {
+        "BACKEND": storage_backend,
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
