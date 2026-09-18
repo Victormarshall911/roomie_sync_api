@@ -20,6 +20,7 @@ class ListingSerializer(serializers.ModelSerializer):
     user_id = serializers.UUIDField(source='user.id', read_only=True)
     user_profile = serializers.SerializerMethodField(read_only=True)
     match_percentage = serializers.SerializerMethodField(read_only=True)
+    is_available = serializers.BooleanField(default=True, required=False)
 
     class Meta:
         model = Listing

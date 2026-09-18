@@ -49,7 +49,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
 
     async def receive_json(self, content):
-        message_text = content.get('content', '').strip()
+        message_text = (content.get('content') or content.get('message') or '').strip()
         if not message_text:
             return
 
