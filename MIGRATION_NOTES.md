@@ -231,21 +231,26 @@ All primary keys are UUIDv4.
 
 ## 6. Roommate Matching Algorithm Specification
 
-The compatibility calculation in `matching/services.py` matches the audited algorithm weights:
+Source: [`RoomieSync/src/utils/matching.ts:31-142`](file:///home/victor/Desktop/RoomieSync/src/utils/matching.ts#L31-L142) and [`BACKEND_AUDIT.md:290-304`](file:///home/victor/Desktop/roomie_sync_api/BACKEND_AUDIT.md#L290-L304).
 
-| Trait | Weight | Calculation Logic |
+The compatibility calculation in `matching/services.py:calculate_match(p1, p2)` faithfully ports the original TypeScript implementation across all 9 traits:
+
+| Trait | Weight | Calculation Logic & Evaluation Criteria |
 | :--- | :--- | :--- |
-| **Location Preference** | **30%** | Exact match = 100%. Substring / partial match = 70%. Mismatch = 0%. |
-| **Budget Overlap** | **20%** | Overlap between `[min_a, max_a]` and `[min_b, max_b]`. Overlap score = `overlap_range / union_range`. |
-| **Sleep Schedule** | **15%** | Exact match (`Early Bird` vs `Early Bird` or `Night Owl` vs `Night Owl`) = 100%. Mismatch = 0%. |
-| **Cleanliness Rating** | **15%** | Scaled difference $\Delta = \|cleanliness_a - cleanliness_b\|$. If $\Delta \le 3$, score = $1.0 - (\Delta / 3.0)$. If $\Delta > 3$, score = 0%. |
-| **Socializing Style** | **10%** | Exact match (`Guests often` vs `Guests often`) = 100%. Mismatch = 0%. |
-| **Smoking Tolerance** | **5%** | Exact match (`No` vs `No`) = 100%. Mismatch = 0%. |
-| **Noise Level** | **5%** | Exact match (`Quiet` vs `Quiet`) = 100%. Mismatch = 0%. |
+| **Budget Overlap** | **25% (0.25)** | Overlap ratio between `[p1.min, p1.max]` and `[p2.min, p2.max]`. If `maxMin <= minMax`, ratio is `(overlapRange * 2) / (p1Range + p2Range)`. Score added = `min(ratio, 1.0) * 0.25`. |
+| **Location Preference** | **15% (0.15)** | Case-insensitive trimmed exact string match = 100% (`0.15`). Substring containment (`loc1 in loc2 or loc2 in loc1`) = 70% partial match (`0.15 * 0.7 = 0.105`). Mismatch = 0%. |
+| **Cleanliness** | **12% (0.12)** | Difference $\Delta = \|cleanliness_1 - cleanliness_2\|$. If $\Delta = 0$, exact match = 100% (`0.12`). If $\Delta \le 3$, scaled tolerance = $1 - (\Delta / 6)$ multiplied by 0.12. If $\Delta > 3$, score = 0%. |
+| **Sleep Habit** | **10% (0.10)** | Exact match (`'Early Bird'` vs `'Early Bird'` or `'Night Owl'` vs `'Night Owl'`) = 100% (`0.10`). Mismatch = 0%. |
+| **Noise Level** | **10% (0.10)** | Exact match (`'Quiet'`, `'Moderate'`, `'Lively'`) = 100% (`0.10`). Mismatch = 0%. |
+| **Socializing** | **8% (0.08)** | Exact match (`'Guests often'` vs `'Guests often'` or `'Rarely'` vs `'Rarely'`) = 100% (`0.08`). Mismatch = 0%. |
+| **Study Time** | **8% (0.08)** | Exact match (`'Morning'`, `'Night'`, `'Varies'`) = 100% (`0.08`). Mismatch = 0%. |
+| **Smoking** | **6% (0.06)** | Exact match (`'Yes'` vs `'Yes'` or `'No'` vs `'No'`) = 100% (`0.06`). Mismatch = 0%. |
+| **Drinking Habit** | **6% (0.06)** | Exact match (`'Often'`, `'Socially'`, `'Rarely/Never'`) = 100% (`0.06`). Mismatch = 0%. |
 
 ### Normalization & Fallback
-- **Missing Trait Handling**: When a student has not filled in certain lifestyle answers, the denominator scales dynamically to only evaluate the answered traits ($\sum W_{answered}$), ensuring students are not penalized for unanswered optional questions.
-- **Baseline Fallback**: If zero common traits are answered by both students, the algorithm returns a safe baseline score of **50%**.
+- **Missing Trait Handling**: When a student has omitted optional lifestyle answers, the denominator scales dynamically to only evaluate answered traits common to both profiles ($\sum W_{answered}$). Students are not penalized for unanswered optional questions.
+- **Baseline Fallback**: If zero common traits are answered by both students (`total_weight == 0`), the algorithm returns a safe baseline score of **50%**.
+- **Rounding**: Final score is rounded to the nearest integer: `round((score / total_weight) * 100)`.
 
 ---
 

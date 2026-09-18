@@ -905,3 +905,6 @@ This matrix defines the target Django architecture corresponding to every compon
 | **4** | **Email Verification Strategy** | Handled invisibly by Supabase Auth with automated email. | **Implement explicit Token/OTP verification flow via Celery.** | `POST /api/v1/auth/verify-email/` with `is_email_verified` flag on `User`. Prevents unverified account activity while matching user expectations. |
 | **5** | **Push Token Model** | 1:1 `profiles.push_token TEXT` (single device per user). | **Create `DeviceToken` table (Many-to-One).** | Deliberate upgrade supporting multi-device notifications. Reinstalls or logins on multiple devices will deliver notifications to all active devices. |
 | **6** | **Third-Party SDKs** | Unspecified. | **Confirmed 0 third-party telemetry/analytics SDKs.** | Audit of `.env`, `app.json`, and `package.json` confirmed only Supabase and Expo Push API communicate externally. |
+
+
+Location of the frontend folder that you have to go through and analyse /Desktop/RoomieSync and build in accordance with
