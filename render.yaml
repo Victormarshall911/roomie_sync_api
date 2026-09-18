@@ -1,0 +1,99 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Web Service: Daphne ASGI (HTTP REST APIs + WebSocket Chat)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: roomiesync-api
+    runtime: python
+    region: frankfurt # Or ohio, oregon, singapore based on user preference
+    plan: free # Free tier for web service
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "daphne -b 0.0.0.0 -p $PORT roomiesync.asgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # Set to Neon PostgreSQL connection string with ?sslmode=require
+      - key: REDIS_URL
+        sync: false # Set to hosted Redis URL (or from Render Redis below)
+      - key: CELERY_BROKER_URL
+        sync: false # Set to Redis broker URL
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "False"
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false # e.g. https://<account_id>.r2.cloudflarestorage.com
+      - key: AWS_S3_CUSTOM_DOMAIN
+        sync: false # e.g. pub-<hash>.r2.dev or media.yourdomain.com
+      - key: AWS_S3_REGION_NAME
+        value: "auto"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+
+  # ---------------------------------------------------------------------------
+  # Background Worker: Celery Worker (Push Notifications & OTP Emails)
+  # Note: Render Background Workers require a Starter plan ($7/mo).
+  # If running on free tier only, set CELERY_TASK_ALWAYS_EAGER=True on Web Service.
+  # ---------------------------------------------------------------------------
+  - type: worker
+    name: roomiesync-worker
+    runtime: python
+    region: frankfurt
+    plan: starter # Render background workers require paid plan
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A roomiesync worker --loglevel=info"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: DATABASE_URL
+      - key: REDIS_URL
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: REDIS_URL
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: CELERY_BROKER_URL
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: AWS_SECRET_ACCESS_KEY
+      - key: AWS_STORAGE_BUCKET_NAME
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: AWS_STORAGE_BUCKET_NAME
+      - key: AWS_S3_ENDPOINT_URL
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: AWS_S3_ENDPOINT_URL
+      - key: AWS_S3_CUSTOM_DOMAIN
+        fromService:
+          type: web
+          name: roomiesync-api
+          envVarKey: AWS_S3_CUSTOM_DOMAIN
